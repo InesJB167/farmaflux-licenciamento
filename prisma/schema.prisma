@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum estado_tenants {
+  ATIVO
+  PENDENTE
+  SUSPENSO
+  CANCELADO
+}
+
+model tenants {
+  id                     Int            @id @default(autoincrement())
+  tenant_id              String         @unique
+  nome_farmacia          String         @db.VarChar(100)
+  estado                 estado_tenants @default(ATIVO)
+  data_proximo_pagamento DateTime
+  limite_dispositivos    Int            @default(5)
+  created_at             DateTime       @default(now())
+
+  dispositivos     dispositivos[]
+  codigos_ativacao codigos_ativacao[]
+}
+
+model dispositivos {
+  id            Int      @id @default(autoincrement())
+  tenant_id_fk  Int
+  id_hardware   String   @unique @db.VarChar(255)
+  token_jwt     String?  @db.VarChar(255)
+  data_ativacao DateTime @default(now())
+  ultimo_acesso DateTime @default(now())
+
+  tenant tenants @relation(fields: [tenant_id_fk], references: [id])
+}
+
+model codigos_ativacao {
+  id           Int       @id @default(autoincrement())
+  codigo       String    @unique @db.VarChar(8) // de 6 á 8 digitos 
+  tenant_id_fk Int
+  codigo_usado Boolean   @default(false)
+  expira_em    DateTime?
+  created_at   DateTime  @default(now())
+
+  tenant tenants @relation(fields: [tenant_id_fk], references: [id])
+}

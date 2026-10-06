@@ -1,0 +1,5 @@
+//arquivos que não vão pra nuvem
+
+.env
+node_modules
+/generated/prisma
