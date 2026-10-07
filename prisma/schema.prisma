@@ -24,7 +24,7 @@ model tenants {
   id                     Int            @id @default(autoincrement())
   tenant_id              String         @unique
   nome_farmacia          String         @db.VarChar(100)
-  estado                 estado_tenants @default(ATIVO)
+  estado                 estado_tenants @default(PENDENTE)
   data_proximo_pagamento DateTime
   limite_dispositivos    Int            @default(5)
   created_at             DateTime       @default(now())
