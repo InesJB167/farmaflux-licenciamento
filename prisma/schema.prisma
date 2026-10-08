@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,24 +14,37 @@ enum estado_tenants {
   CANCELADO
 }
 
-model tenants {
-  id                     Int            @id @default(autoincrement())
-  tenant_id              String         @unique
-  nome_farmacia          String         @db.VarChar(100)
-  estado                 estado_tenants @default(PENDENTE)
-  data_proximo_pagamento DateTime
-  limite_dispositivos    Int            @default(5)
-  created_at             DateTime       @default(now())
+enum tipo_periodo_licenca {
+  MENSAL      // LCM
+  TRIMESTRAL  // LCT
+  SEMESTRAL   // LCS
+  ANUAL       // LCA
+}
 
-  dispositivos     dispositivos[]
-  codigos_ativacao codigos_ativacao[]
+enum metodo_pagamento {
+  DINHEIRO
+  TRANSFERENCIA
+}
+
+model tenants {
+  id                     Int                 @id @default(autoincrement())
+  tenant_id              String              @unique
+  nome_farmacia          String              @db.VarChar(100)
+  estado                 estado_tenants      @default(PENDENTE)
+  data_proximo_pagamento DateTime?
+  limite_dispositivos    Int                 @default(5)
+  created_at             DateTime            @default(now())
+
+  dispositivos      dispositivos[]
+  codigos_ativacao  codigos_ativacao[]
+  pagamentos        pagamento_licenca[]
 }
 
 model dispositivos {
   id            Int      @id @default(autoincrement())
   tenant_id_fk  Int
   id_hardware   String   @unique @db.VarChar(255)
-  token_jwt     String?  @db.VarChar(255)
+  token_jwt     String?  @db.VarChar(500) 
   data_ativacao DateTime @default(now())
   ultimo_acesso DateTime @default(now())
 
@@ -46,11 +53,36 @@ model dispositivos {
 
 model codigos_ativacao {
   id           Int       @id @default(autoincrement())
-  codigo       String    @unique @db.VarChar(8) // de 6 á 8 digitos 
+  codigo       String    @unique @db.VarChar(8)
   tenant_id_fk Int
   codigo_usado Boolean   @default(false)
   expira_em    DateTime?
   created_at   DateTime  @default(now())
 
   tenant tenants @relation(fields: [tenant_id_fk], references: [id])
+}
+
+model planos_licenca {
+  id             Int                  @id @default(autoincrement())
+  codigo         String               @unique @db.VarChar(10) // LCM, LCT, LCS, LCA
+  tipo           tipo_periodo_licenca
+  custo          Decimal              @db.Decimal(10, 2)
+  duracao_dias   Int                  // 30, 90, 180, 365
+
+  pagamentos pagamento_licenca[]
+}
+
+model pagamento_licenca {
+  id               Int              @id @default(autoincrement())
+  tenant_id_fk     Int
+  plano_id         Int
+  valor_pago       Decimal          @db.Decimal(10, 2)
+  metodo           metodo_pagamento @default(TRANSFERENCIA)
+  data_pagamento   DateTime         @default(now())
+  data_inicio      DateTime         // quando a licença começa a valer
+  data_fim         DateTime         // quando a licença termina
+  created_at       DateTime         @default(now())
+
+  tenant tenants         @relation(fields: [tenant_id_fk], references: [id])
+  plano  planos_licenca  @relation(fields: [plano_id], references: [id])
 }
