@@ -1,18 +1,25 @@
 import prisma from "../../../../prisma/prisma.js"
-import {buscarTenantId} from "../../tenants/repository/buscarTenantId.js"
 import { randomInt } from "node:crypto"
 import { buscarCodigoAtivacao } from "../repos/buscarCodigoAtivacao.js"
+import { buscarTenantPorId } from "../../tenants/repository/buscarTenantPorId.js"
 
 export const gerarCodigoAtivacaoService = async(tenantId)=>{
     /**
      * ? essa funçao vai gerar o codigo de ativaçao para o uso do sistema 
      */
 
-    const tenant = await buscarTenantId(tenantId)
+    const tenant = await buscarTenantPorId(tenantId)
     if(!tenant) return{
         success: false,
         status: 404,
         message: "Tenant não encontrado."
+    }
+
+    const estadoTenant = tenant.estado
+    if(estadoTenant !== "ATIVO") return{
+        succes: false,
+        status: 409,
+        message: "Status inativo: não é possivel gerar o código de ativação."
     }
 
     const sequencia = randomInt(0,10000)
@@ -20,7 +27,6 @@ export const gerarCodigoAtivacaoService = async(tenantId)=>{
     const idTenant = tenant.id
     const data = new Date()
     const expirando = new Date(data.setMinutes((data.getMinutes()) + 30))
-    console.log(`sequencia ${sequencia}, codigo ${codigoAtivacao}, expirando em ${expirando}`)
 
     const codigoExiste = await buscarCodigoAtivacao(codigoAtivacao)
     if(codigoExiste) return{
