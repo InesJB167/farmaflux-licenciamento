@@ -1,6 +1,6 @@
 import prisma from "../../../../prisma/prisma.js"
 import {buscarTenantId} from "../../tenants/repository/buscarTenantId.js"
-import crypto, { randomInt } from "node:crypto"
+import { randomInt } from "node:crypto"
 import { buscarCodigoAtivacao } from "../repos/buscarCodigoAtivacao.js"
 
 export const gerarCodigoAtivacaoService = async(tenantId)=>{

@@ -34,7 +34,7 @@ export const registrarPagamentoService = async (idTenant, dadosPagamento) =>
     const hoje = new Date()
     const dataAtual = new Date()
     const duracao = planoLicenca.duracao_dias
-    const dataFim = new Date(dataAtual.setDate(dataAtual.getDate() + duracao)) 
+    const dataFim = new Date(dataAtual.setDate(dataAtual.getDate() + duracao))
     console.log(`Data atual ${dataAtual} depois de ${duracao} dias ${dataFim}`)
 
     const dadosParaRegistro = {
@@ -44,19 +44,47 @@ export const registrarPagamentoService = async (idTenant, dadosPagamento) =>
         data_fim: dataFim
     }
 
-    const registrarPagamento = await prisma.pagamento_licenca.create({
-        data: {
-            tenant: {
-                connect: {
-                    id: idTenant
-                }
+    const realizarPagamento = await prisma.$transaction( async (tx) =>
+    {
+        const registrarPagamento = await tx.pagamento_licenca.create({
+            data: {
+                tenant: {
+                    connect: {
+                        id: idTenant
+                    }
+                },
+                plano: {
+                    connect: {
+                        id: planoLicenca.id
+                    }
+                },
+                ...dadosParaRegistro
             },
-            plano: {
-                connect: {
-                    id: planoLicenca.id
-                }
+            select:{
+                id: true,
+                data_pagamento: true,
+                valor_pago: true,
+                metodo: true
+            }
+        })
+
+        const alterarStatusTenant = await tx.tenants.update({
+            where: {
+                id: idTenant
             },
-            ...dadosParaRegistro
+            data: {
+                estado: "ATIVO"
+            },
+            select: {
+                tenant_id: true,
+                estado: true
+            }
+        })
+        return {
+            resultado: {
+                registrarPagamento,
+                alterarStatusTenant
+            }
         }
     })
 
@@ -64,7 +92,7 @@ export const registrarPagamentoService = async (idTenant, dadosPagamento) =>
         success: true,
         status: 201,
         message: "Pagamento registrado com sucesso.",
-        data: registrarPagamento
+        data: realizarPagamento
     }
 
 }
