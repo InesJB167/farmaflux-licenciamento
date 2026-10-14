@@ -15,10 +15,10 @@ enum estado_tenants {
 }
 
 enum tipo_periodo_licenca {
-  MENSAL      // LCM
-  TRIMESTRAL  // LCT
-  SEMESTRAL   // LCS
-  ANUAL       // LCA
+  MENSAL // LCM
+  TRIMESTRAL // LCT
+  SEMESTRAL // LCS
+  ANUAL // LCA
 }
 
 enum metodo_pagamento {
@@ -27,24 +27,24 @@ enum metodo_pagamento {
 }
 
 model tenants {
-  id                     Int                 @id @default(autoincrement())
-  tenant_id              String              @unique
-  nome_farmacia          String              @db.VarChar(100)
-  estado                 estado_tenants      @default(PENDENTE)
+  id                     Int            @id @default(autoincrement())
+  tenant_id              String         @unique
+  nome_farmacia          String         @db.VarChar(100)
+  estado                 estado_tenants @default(PENDENTE)
   data_proximo_pagamento DateTime?
-  limite_dispositivos    Int                 @default(5)
-  created_at             DateTime            @default(now())
+  limite_dispositivos    Int            @default(5)
+  created_at             DateTime       @default(now())
 
-  dispositivos      dispositivos[]
-  codigos_ativacao  codigos_ativacao[]
-  pagamentos        pagamento_licenca[]
+  dispositivos     dispositivos[]
+  codigos_ativacao codigos_ativacao[]
+  pagamentos       pagamento_licenca[]
 }
 
 model dispositivos {
   id            Int      @id @default(autoincrement())
   tenant_id_fk  Int
   id_hardware   String   @unique @db.VarChar(255)
-  token_jwt     String?  @db.VarChar(500) 
+  token_jwt     String?  @db.VarChar(500)
   data_ativacao DateTime @default(now())
   ultimo_acesso DateTime @default(now())
 
@@ -63,26 +63,27 @@ model codigos_ativacao {
 }
 
 model planos_licenca {
-  id             Int                  @id @default(autoincrement())
-  codigo         String               @unique @db.VarChar(10) // LCM, LCT, LCS, LCA
-  tipo           tipo_periodo_licenca
-  custo          Decimal              @db.Decimal(10, 2)
-  duracao_dias   Int                  // 30, 90, 180, 365
+  id           Int                  @id @default(autoincrement())
+  codigo       String               @unique @db.VarChar(10) // LCM, LCT, LCS, LCA
+  tipo         tipo_periodo_licenca
+  custo        Decimal              @db.Decimal(10, 2)
+  duracao_dias Int // 30, 90, 180, 365
 
   pagamentos pagamento_licenca[]
 }
 
 model pagamento_licenca {
-  id               Int              @id @default(autoincrement())
-  tenant_id_fk     Int
-  plano_id         Int
-  valor_pago       Decimal          @db.Decimal(10, 2)
-  metodo           metodo_pagamento @default(TRANSFERENCIA)
-  data_pagamento   DateTime         @default(now())
-  data_inicio      DateTime         // quando a licença começa a valer
-  data_fim         DateTime         // quando a licença termina
-  created_at       DateTime         @default(now())
+  id             Int              @id @default(autoincrement())
+  tenant_id_fk   Int
+  plano_id       Int
+  valor_pago     Decimal          @db.Decimal(10, 2)
+  metodo         metodo_pagamento @default(TRANSFERENCIA)
+  data_pagamento DateTime         @default(now())
+  data_inicio    DateTime // quando a licença começa a valer
+  data_fim       DateTime // quando a licença termina
+  created_at     DateTime         @default(now())
+  referencia     String           @unique //a referencia bancaria
 
-  tenant tenants         @relation(fields: [tenant_id_fk], references: [id])
-  plano  planos_licenca  @relation(fields: [plano_id], references: [id])
+  tenant tenants        @relation(fields: [tenant_id_fk], references: [id])
+  plano  planos_licenca @relation(fields: [plano_id], references: [id])
 }

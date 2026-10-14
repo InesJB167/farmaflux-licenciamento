@@ -7,6 +7,7 @@ export const registrarPagamento = async(req,res)=>{
         const valorPago = parseFloat(req.body.valorPago)
         const metodosPagamento = ["DINHEIRO","TRANSFERENCIA"]
         const metodoUsado = req.body.metodoUsado?.trim().toUpperCase()
+        const referencia = req.body.referencia?.trim()
 
         if(isNaN(idTenant)) return res.status(400).json({message:"Id tenant inválido."})
 
@@ -16,11 +17,14 @@ export const registrarPagamento = async(req,res)=>{
 
         if(isNaN(valorPago) || valorPago <= 0) return res.status(400).json({message:"Valor pago inválido."})
 
+        if(!referencia) return res.status(400).json({message:"Referência bancária inválida."})
+
         const dadosPagamento={
             idTenant,
             idPlano,
             valorPago,
-            metodoUsado
+            metodoUsado,
+            referencia
         }
 
         const registrar = await registrarPagamentoService(idTenant,dadosPagamento)
